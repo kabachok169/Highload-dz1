@@ -22,7 +22,7 @@ def parse_config(config_path):
 
     config = {
         'listen': 80,
-        'thread_limit': 256,
+        'thread_limit': 8,
         'document_root': '/var/www/html'
     }
 
@@ -89,6 +89,7 @@ def make_get_response(path):
             body = file.read()
     except IOError:
         return make_error_response(404)
+
     response = 'HTTP/1.1 200 OK\r\n'
     response += make_common_response_headers()
     response += get_content_type(path)
@@ -99,14 +100,12 @@ def make_get_response(path):
 
 
 def make_response(request, document_root):
-    print request
-    # headers_part, body = request.split('\r\n\r\n', 1)
+    # print request
     headers_part = request.split('\r\n\r\n')[0]
     headers_lines = headers_part.split('\r\n')
     method, path, version = headers_lines[0].split()
     path = unquote(path).split('?')[0]
     full_path = get_full_path(path, document_root)
-    headers = {line.split(': ')[0]: line.split(': ')[1] for line in headers_lines[1:]}
 
     if '/..' in path:
         return make_error_response(404)
@@ -123,9 +122,8 @@ def make_response(request, document_root):
 
 
 def handle_requests(sock, document_root):
-    print 'thread started'
     while True:
-        connection, adress = sock.accept()
+        connection, address = sock.accept()
 
         data = connection.recv(2048)
         if len(data.strip()) == 0:
